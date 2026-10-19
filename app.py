@@ -4,6 +4,8 @@ from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
+MAX_NAME_LENGTH = 30
+
 
 def bmi_guidance(bmi):
     if bmi < 18.5:
@@ -41,12 +43,14 @@ def parse_positive_number(value):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    name_input = ""
     height_input = ""
     weight_input = ""
     errors = {}
     result = None
 
     if request.method == "POST":
+        name_input = request.form.get("name", "").strip()[:MAX_NAME_LENGTH]
         height_input = request.form.get("height", "").strip()
         weight_input = request.form.get("weight", "").strip()
         height = parse_positive_number(height_input)
@@ -72,6 +76,7 @@ def index():
 
     return render_template(
         "index.html",
+        name_input=name_input,
         height_input=height_input,
         weight_input=weight_input,
         errors=errors,

@@ -33,6 +33,13 @@ class BmiAppTests(unittest.TestCase):
             with self.subTest(bmi=bmi):
                 self.assertEqual(bmi_guidance(bmi)["label"], category)
 
+    def test_name_is_shown_in_result(self):
+        named = self.client.post("/", data={"name": "Brian", "height": "170", "weight": "65"}).get_data(as_text=True)
+        anonymous = self.client.post("/", data={"height": "170", "weight": "65"}).get_data(as_text=True)
+        self.assertIn("Brian，你的體位屬於", named)
+        self.assertIn("你的體位屬於", anonymous)
+        self.assertNotIn("，你的體位屬於", anonymous)
+
     def test_obese_result_uses_red_tone(self):
         obese = self.client.post("/", data={"height": "170", "weight": "90"}).get_data(as_text=True)
         overweight = self.client.post("/", data={"height": "170", "weight": "75"}).get_data(as_text=True)

@@ -34,6 +34,12 @@
               </div>
 
               <form method="post" action="{{ url_for('index') }}" novalidate>
+                <div class="field">
+                  <label for="name">名稱 <span>NAME</span></label>
+                  <div class="input-wrap">
+                    <input id="name" name="name" type="text" maxlength="30" placeholder="例如 小明（選填）" value="{{ name_input }}">
+                  </div>
+                </div>
                 <div class="form-fields">
                   <div class="field">
                     <label for="height">身高 <span>HEIGHT</span></label>
@@ -66,7 +72,7 @@
                   <span class="result-unit">BMI</span>
                 </div>
                 <div class="result-divider"></div>
-                <span class="result-label">你的體位屬於 <strong>{{ result.label }}</strong></span>
+                <span class="result-label">{% if name_input %}{{ name_input }}，{% endif %}你的體位屬於 <strong>{{ result.label }}</strong></span>
                 <h2 id="result-title">給你的健康建議</h2>
                 <p>{{ result.advice }}</p>
                 <span class="result-decoration" aria-hidden="true">✳</span>
