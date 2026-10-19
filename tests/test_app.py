@@ -33,6 +33,12 @@ class BmiAppTests(unittest.TestCase):
             with self.subTest(bmi=bmi):
                 self.assertEqual(bmi_guidance(bmi)["label"], category)
 
+    def test_obese_result_uses_red_tone(self):
+        obese = self.client.post("/", data={"height": "170", "weight": "90"}).get_data(as_text=True)
+        overweight = self.client.post("/", data={"height": "170", "weight": "75"}).get_data(as_text=True)
+        self.assertIn("result-panel obese", obese)
+        self.assertNotIn("result-panel obese", overweight)
+
     def test_invalid_fields_do_not_produce_result(self):
         for height, weight in [("", "65"), ("0", "65"), ("abc", "65"), ("170", "-2"), ("inf", "65"), ("170", "nan"), ("1e-300", "65"), ("1e308", "65"), ("1", "1e308")]:
             with self.subTest(height=height, weight=weight):

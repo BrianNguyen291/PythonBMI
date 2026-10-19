@@ -26,7 +26,7 @@ def bmi_guidance(bmi):
         }
     return {
         "label": "肥胖",
-        "tone": "high",
+        "tone": "obese",
         "advice": "建議與醫師或營養師討論適合自己的飲食及運動計畫，並留意血壓、血糖等健康指標。",
     }
 
