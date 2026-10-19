@@ -1,17 +1,7 @@
 name: Deploy BMI to Azure
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - app.py
-      - serve.py
-      - web.config
-      - requirements.txt
-      - templates/**
-      - static/**
-      - tests/**
-      - .github/workflows/deploy-azure.yml
+  # Push trigger disabled until AZURE_CREDENTIALS is available; deploys go to Zeabur (deploy-zeabur.yml).
   workflow_dispatch:
 
 permissions:

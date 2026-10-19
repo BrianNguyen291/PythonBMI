@@ -1,0 +1,38 @@
+name: Deploy BMI to Zeabur
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zeabur-bmi-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ZEABUR_SERVICE_ID: ${{ vars.ZEABUR_SERVICE_ID }}
+      ZEABUR_ENVIRONMENT_ID: ${{ vars.ZEABUR_ENVIRONMENT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install dependencies and run tests
+        run: |
+          python -m pip install -r requirements.txt
+          python -m unittest discover -s tests
+
+      - name: Deploy to Zeabur
+        env:
+          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+        run: |
+          npx --yes zeabur@0.22.2 auth login --token "$ZEABUR_TOKEN" -i=false
+          npx --yes zeabur@0.22.2 deploy -i=false --service-id "$ZEABUR_SERVICE_ID" --environment-id "$ZEABUR_ENVIRONMENT_ID"
