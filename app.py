@@ -1,6 +1,7 @@
 import math
 import os
 import sqlite3
+from contextlib import closing, contextmanager
 from datetime import datetime, timedelta, timezone
 
 from flask import Flask, abort, render_template, request
@@ -13,15 +14,16 @@ MAX_NAME_LENGTH = 30
 TAIPEI = timezone(timedelta(hours=8))
 
 
+@contextmanager
 def db():
     path = app.config["DATABASE"]
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    conn = sqlite3.connect(path)
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS records ("
-        "id INTEGER PRIMARY KEY, name TEXT NOT NULL, bmi TEXT NOT NULL, created_at TEXT NOT NULL)"
-    )
-    return conn
+    with closing(sqlite3.connect(path)) as conn, conn:
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS records ("
+            "id INTEGER PRIMARY KEY, name TEXT NOT NULL, bmi TEXT NOT NULL, created_at TEXT NOT NULL)"
+        )
+        yield conn
 
 
 def save_record(name, bmi):
