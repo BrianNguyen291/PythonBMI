@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% if name %}{{ name }} 的 BMI 紀錄{% else %}所有用戶{% endif %} · 好好生活</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a class="brand" href="{{ url_for('index') }}" aria-label="好好生活，回到首頁">
+          <span class="brand-mark" aria-hidden="true">✳</span>
+          好好生活 <span class="brand-en">WELL LIVING</span>
+        </a>
+        <span class="header-note">NTUST Lab 2 · 把健康，從了解自己開始。 · <a href="{{ url_for('users') }}">所有用戶</a></span>
+      </header>
+
+      <main class="information history">
+        {% if name %}
+          <div class="about">
+            <span class="section-number">03 / HISTORY</span>
+            <h2>{{ name }} 的 BMI 紀錄</h2>
+            <p><a href="{{ url_for('users') }}">← 回到所有用戶</a></p>
+          </div>
+          <div class="ranges">
+            <h3>歷次計算 <span>由新到舊</span></h3>
+            {% for bmi, created_at in records %}
+              <div class="range-row"><span>{{ created_at }}</span><strong>{{ bmi }}</strong></div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="about">
+            <span class="section-number">03 / USERS</span>
+            <h2>所有用戶</h2>
+            <p>在首頁輸入名稱後計算 BMI，就會記錄在這裡。點選名稱查看歷次紀錄。</p>
+          </div>
+          <div class="ranges">
+            <h3>用戶列表 <span>次數 · 最近計算</span></h3>
+            {% for user, count, last_at in users %}
+              <div class="range-row"><a href="{{ url_for('user_history', name=user) }}">{{ user }}</a><strong>{{ count }} 次 · {{ last_at }}</strong></div>
+            {% else %}
+              <div class="range-row"><span>尚無紀錄</span></div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </main>
+      <footer>© 好好生活 <span>TAKE CARE, EVERY DAY.</span></footer>
+    </div>
+  </body>
+</html>

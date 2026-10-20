@@ -102,3 +102,6 @@ footer span { letter-spacing: .14em; }
   .result-panel { padding: 32px 26px; }
   .ranges { padding: 22px 18px; }
 }
+
+.history { border-top: 0; }
+.header-note a, .history a { color: #3d664d; }
