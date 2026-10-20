@@ -1,10 +1,33 @@
 import math
+import os
+import sqlite3
+from datetime import datetime, timedelta, timezone
 
-from flask import Flask, render_template, request
+from flask import Flask, abort, render_template, request
 
 app = Flask(__name__)
+app.config.setdefault("DATABASE", os.path.join(app.instance_path, "bmi.sqlite3"))
 
 MAX_NAME_LENGTH = 30
+# Taiwan has no DST; a fixed offset avoids needing tzdata on Windows' embedded Python.
+TAIPEI = timezone(timedelta(hours=8))
+
+
+def db():
+    path = app.config["DATABASE"]
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    conn = sqlite3.connect(path)
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS records ("
+        "id INTEGER PRIMARY KEY, name TEXT NOT NULL, bmi TEXT NOT NULL, created_at TEXT NOT NULL)"
+    )
+    return conn
+
+
+def save_record(name, bmi):
+    created_at = datetime.now(TAIPEI).strftime("%Y-%m-%d %H:%M:%S")
+    with db() as conn:
+        conn.execute("INSERT INTO records (name, bmi, created_at) VALUES (?, ?, ?)", (name, bmi, created_at))
 
 
 def bmi_guidance(bmi):
@@ -73,6 +96,8 @@ def index():
                 else:
                     displayed_bmi = round(bmi, 1)
                     result = {"bmi": f"{displayed_bmi:.1f}", **bmi_guidance(displayed_bmi)}
+                    if name_input:
+                        save_record(name_input, result["bmi"])
 
     return render_template(
         "index.html",
@@ -82,6 +107,26 @@ def index():
         errors=errors,
         result=result,
     )
+
+
+@app.route("/users")
+def users():
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT name, COUNT(*), MAX(created_at) FROM records GROUP BY name ORDER BY MAX(id) DESC"
+        ).fetchall()
+    return render_template("users.html", users=rows)
+
+
+@app.route("/users/<path:name>")
+def user_history(name):
+    with db() as conn:
+        rows = conn.execute(
+            "SELECT bmi, created_at FROM records WHERE name = ? ORDER BY id DESC", (name,)
+        ).fetchall()
+    if not rows:
+        abort(404)
+    return render_template("users.html", name=name, records=rows)
 
 
 if __name__ == "__main__":
