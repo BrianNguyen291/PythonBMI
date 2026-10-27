@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from app import app, bmi_guidance
+from app import app, bmi_guidance, military_status
 
 
 class BmiAppTests(unittest.TestCase):
@@ -81,7 +81,8 @@ class BmiAppTests(unittest.TestCase):
         history = self.client.get("/users/Brian").get_data(as_text=True)
         self.assertIn("22.5", history)
         self.assertIn("31.1", history)
-        self.assertLess(history.index("31.1"), history.index("22.5"))  # newest first
+        listing = history[history.index("歷次計算"):]
+        self.assertLess(listing.index("31.1"), listing.index("22.5"))  # newest first
         self.assertRegex(history, r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}")
 
     def test_anonymous_results_are_not_recorded(self):
@@ -105,6 +106,63 @@ class BmiAppTests(unittest.TestCase):
         self.assertEqual(history.status_code, 200)
         self.assertNotIn("<b>a/b</b>", history.get_data(as_text=True))
         self.assertIn("22.5", history.get_data(as_text=True))
+
+    def test_military_status_boundaries(self):
+        for bmi, status in [
+            (14.9, "免役"),
+            (15.0, "替代役"),
+            (16.4, "替代役"),
+            (16.5, "常備役"),
+            (32.0, "常備役"),
+            (32.1, "替代役"),
+            (35.0, "替代役"),
+            (35.1, "免役"),
+        ]:
+            with self.subTest(bmi=bmi):
+                self.assertEqual(military_status(bmi), status)
+
+    def test_military_status_shown_with_disclaimer(self):
+        page = self.client.post("/", data={"height": "170", "weight": "65"}).get_data(as_text=True)
+        self.assertIn("兵役體位（試算） <strong>常備役</strong>", page)
+        self.assertIn("以兵役複檢結果為準", page)
+        self.assertIn("2023-06-01", page)
+        invalid = self.client.post("/", data={"height": "0", "weight": "65"}).get_data(as_text=True)
+        self.assertNotIn("兵役體位", invalid)
+
+    def test_trend_chart_and_deltas(self):
+        self.client.post("/", data={"name": "Brian", "height": "170", "weight": "75"})  # 26.0 過重
+        self.client.post("/", data={"name": "Brian", "height": "170", "weight": "70"})  # 24.2 過重
+        self.client.post("/", data={"name": "Brian", "height": "170", "weight": "65"})  # 22.5 健康
+        page = self.client.get("/users/Brian").get_data(as_text=True)
+        self.assertIn("trend-chart", page)
+        self.assertEqual(page.count("<circle"), 3)
+        self.assertIn("▼ −1.8", page)
+        self.assertIn("▼ −1.7", page)
+        self.assertIn("第一次 26.0 → 最近一次 22.5（▼ −3.5）", page)
+        self.assertIn("體重過重 → 健康體位", page)
+
+    def test_single_record_has_no_chart(self):
+        self.client.post("/", data={"name": "Amy", "height": "160", "weight": "50"})
+        page = self.client.get("/users/Amy").get_data(as_text=True)
+        self.assertNotIn("trend-chart", page)
+        self.assertNotIn("▲", page)
+        self.assertIn("再量一次就能看到趨勢", page)
+
+    def test_export_csv(self):
+        self.client.post("/", data={"name": "小明", "height": "170", "weight": "65"})
+        self.client.post("/", data={"name": "小明", "height": "170", "weight": "90"})
+        response = self.client.get("/export/小明")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "text/csv")
+        self.assertIn("attachment", response.headers["Content-Disposition"])
+        self.assertRegex(response.headers["Content-Disposition"], r"bmi-%E5%B0%8F%E6%98%8E-\d{8}\.csv")
+        body = response.data
+        self.assertTrue(body.startswith(b"\xef\xbb\xbf"))
+        lines = body.decode("utf-8-sig").splitlines()
+        self.assertEqual(lines[0], "量測時間,BMI,體位")
+        self.assertRegex(lines[1], r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},22\.5,健康體位$")
+        self.assertTrue(lines[2].endswith(",31.1,肥胖"))
+        self.assertEqual(self.client.get("/export/nobody").status_code, 404)
 
 
 if __name__ == "__main__":

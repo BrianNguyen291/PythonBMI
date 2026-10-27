@@ -105,3 +105,13 @@ footer span { letter-spacing: .14em; }
 
 .history { border-top: 0; }
 .header-note a, .history a { color: #3d664d; }
+.result-label.military { display: block; margin-top: 14px; }
+.military-note { position: relative; z-index: 1; display: block; margin-top: 6px; color: #728a77; font-size: 12px; line-height: 1.6; }
+.trend-summary { color: #405247; font-weight: 600; }
+.trend-chart { width: 100%; height: auto; margin: 4px 0 18px; }
+.trend-chart .band-low { fill: #a2b8ca; opacity: .18; } .trend-chart .band-healthy { fill: #85b487; opacity: .18; }
+.trend-chart .band-high { fill: #e1c37d; opacity: .18; } .trend-chart .band-obese { fill: #ca977d; opacity: .18; }
+.trend-line { fill: none; stroke: #3d664d; stroke-width: 2; }
+.trend-dot { fill: #3d664d; }
+.trend-chart .axis { fill: #728a77; font-size: 11px; }
+.delta { margin-left: 6px; color: #728a77; font-weight: 500; }
