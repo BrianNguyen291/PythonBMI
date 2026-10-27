@@ -21,12 +21,29 @@
           <div class="about">
             <span class="section-number">03 / HISTORY</span>
             <h2>{{ name }} 的 BMI 紀錄</h2>
-            <p><a href="{{ url_for('users') }}">← 回到所有用戶</a></p>
+            <p><a href="{{ url_for('users') }}">← 回到所有用戶</a> · <a href="{{ url_for('export_csv', name=name) }}">匯出 CSV</a></p>
+            {% if summary %}
+              <p class="trend-summary">第一次 {{ summary.first.bmi }} → 最近一次 {{ summary.last.bmi }}（{{ summary.delta_text }}）<br>
+                {% if summary.first.label != summary.last.label %}{{ summary.first.label }} → {{ summary.last.label }}{% else %}體位維持 {{ summary.last.label }}{% endif %}</p>
+            {% else %}
+              <p class="trend-summary">再量一次就能看到趨勢。</p>
+            {% endif %}
           </div>
           <div class="ranges">
+            {% if chart %}
+              <h3>BMI 趨勢 <span>由舊到新</span></h3>
+              <svg class="trend-chart" viewBox="0 0 {{ chart.width }} {{ chart.height }}" role="img" aria-label="{{ name }} 的 BMI 趨勢圖">
+                {% for band in chart.bands %}<rect class="band-{{ band.tone }}" x="{{ chart.pad }}" y="{{ band.y }}" width="{{ chart.width - 2 * chart.pad }}" height="{{ band.h }}"/>{% endfor %}
+                {% for line in chart.lines %}<text class="axis" x="2" y="{{ line.y + 4 }}">{{ line.value }}</text>{% endfor %}
+                <polyline class="trend-line" points="{{ chart.polyline }}"/>
+                {% for dot in chart.dots %}<circle class="trend-dot" cx="{{ dot.x }}" cy="{{ dot.y }}" r="4"><title>{{ dot.created_at }} · BMI {{ dot.bmi }}</title></circle>{% endfor %}
+                <text class="axis" x="{{ chart.pad }}" y="{{ chart.height - 4 }}">{{ chart.dots[0].created_at }}</text>
+                <text class="axis" x="{{ chart.width - chart.pad }}" y="{{ chart.height - 4 }}" text-anchor="end">{{ chart.dots[-1].created_at }}</text>
+              </svg>
+            {% endif %}
             <h3>歷次計算 <span>由新到舊</span></h3>
-            {% for bmi, created_at in records %}
-              <div class="range-row"><span>{{ created_at }}</span><strong>{{ bmi }}</strong></div>
+            {% for r in records %}
+              <div class="range-row"><span>{{ r.created_at }}</span><strong>{{ r.bmi }}{% if r.delta_text %} <small class="delta">{{ r.delta_text }}</small>{% endif %}</strong></div>
             {% endfor %}
           </div>
         {% else %}

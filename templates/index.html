@@ -73,6 +73,8 @@
                 </div>
                 <div class="result-divider"></div>
                 <span class="result-label">{% if name_input %}{{ name_input }}，{% endif %}你的體位屬於 <strong>{{ result.label }}</strong></span>
+                <span class="result-label military">兵役體位（試算） <strong>{{ result.military }}</strong></span>
+                <small class="military-note">僅依 BMI 試算，實際體位以兵役複檢結果為準。依據{{ result.military_standard }}。</small>
                 <h2 id="result-title">給你的健康建議</h2>
                 <p>{{ result.advice }}</p>
                 <span class="result-decoration" aria-hidden="true">✳</span>
