@@ -2,10 +2,10 @@ import os
 import tempfile
 import unittest
 
-from app import app, bmi_guidance, military_status
+from app import app
 
 
-class BmiAppTests(unittest.TestCase):
+class BmiRouteTests(unittest.TestCase):
     def setUp(self):
         fd, self.db_path = tempfile.mkstemp(suffix=".sqlite3")
         os.close(fd)
@@ -28,18 +28,6 @@ class BmiAppTests(unittest.TestCase):
         self.assertIn("22.5", page)
         self.assertIn("健康體位", page)
         self.assertIn("維持均衡飲食", page)
-
-    def test_taiwan_adult_thresholds(self):
-        for bmi, category in [
-            (18.4, "體重過輕"),
-            (18.5, "健康體位"),
-            (23.9, "健康體位"),
-            (24.0, "體重過重"),
-            (26.9, "體重過重"),
-            (27.0, "肥胖"),
-        ]:
-            with self.subTest(bmi=bmi):
-                self.assertEqual(bmi_guidance(bmi)["label"], category)
 
     def test_name_is_shown_in_result(self):
         named = self.client.post("/", data={"name": "Brian", "height": "170", "weight": "65"}).get_data(as_text=True)
@@ -106,20 +94,6 @@ class BmiAppTests(unittest.TestCase):
         self.assertEqual(history.status_code, 200)
         self.assertNotIn("<b>a/b</b>", history.get_data(as_text=True))
         self.assertIn("22.5", history.get_data(as_text=True))
-
-    def test_military_status_boundaries(self):
-        for bmi, status in [
-            (14.9, "免役"),
-            (15.0, "替代役"),
-            (16.4, "替代役"),
-            (16.5, "常備役"),
-            (32.0, "常備役"),
-            (32.1, "替代役"),
-            (35.0, "替代役"),
-            (35.1, "免役"),
-        ]:
-            with self.subTest(bmi=bmi):
-                self.assertEqual(military_status(bmi), status)
 
     def test_military_status_shown_with_disclaimer(self):
         page = self.client.post("/", data={"height": "170", "weight": "65"}).get_data(as_text=True)

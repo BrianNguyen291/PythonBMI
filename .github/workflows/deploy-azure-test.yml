@@ -20,6 +20,8 @@ jobs:
       PYTHON_RUNTIME_VERSION: 3.14.8
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -30,12 +32,23 @@ jobs:
           python -m pip install -r requirements.txt
           python -m unittest discover -s tests
 
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v8.3.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECTKEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGKEY }}
+            -Dsonar.sources=.
+            -Dsonar.python.version=3.12
+
       - name: Package Windows Python app
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force dist\runtime | Out-Null
-          Copy-Item app.py, serve.py, web.config dist\
+          Copy-Item app.py, bmi_logic.py, serve.py, web.config dist\
           Copy-Item templates, static dist\ -Recurse
           python -m pip install --target dist\site-packages -r requirements.txt
           if ($LASTEXITCODE -ne 0) { throw 'Dependency packaging failed' }
