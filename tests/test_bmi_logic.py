@@ -1,6 +1,6 @@
 import unittest
 
-from app import bmi_guidance, military_status
+from bmi_logic import BmiInputError, bmi_guidance, calculate_bmi, format_delta, military_status, trend
 
 
 class BmiLogicTests(unittest.TestCase):
@@ -29,6 +29,28 @@ class BmiLogicTests(unittest.TestCase):
         ]:
             with self.subTest(bmi=bmi):
                 self.assertEqual(military_status(bmi), status)
+
+    def test_calculate_bmi_rounds_to_one_decimal(self):
+        self.assertEqual(calculate_bmi(170, 65), 22.5)
+        self.assertEqual(calculate_bmi(170, 90), 31.1)
+
+    def test_calculate_bmi_blames_the_right_field(self):
+        for height, weight, field in [(1e-300, 65, "height"), (1e308, 65, "height"), (1, 1e308, "weight")]:
+            with self.subTest(height=height, weight=weight):
+                with self.assertRaises(BmiInputError) as ctx:
+                    calculate_bmi(height, weight)
+                self.assertEqual(ctx.exception.field, field)
+
+    def test_trend_orders_oldest_first_with_deltas(self):
+        points = trend([("22.5", "t3"), ("24.2", "t2"), ("26.0", "t1")])
+        self.assertEqual([p["created_at"] for p in points], ["t1", "t2", "t3"])
+        self.assertEqual([p["delta"] for p in points], [None, -1.8, -1.7])
+        self.assertEqual(points[-1]["label"], "健康體位")
+
+    def test_format_delta(self):
+        self.assertEqual(format_delta(1.8), "▲ +1.8")
+        self.assertEqual(format_delta(-1.7), "▼ −1.7")
+        self.assertEqual(format_delta(0), "— 0.0")
 
 
 if __name__ == "__main__":
